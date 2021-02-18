@@ -7,7 +7,8 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include "Ma_Libft/includes/libft.h"
-#define LEN 	30
+
+#define LEN 	60
 #define MAX 	0xfffffffffffffff
 #define UNIT 	(unsigned long long)1
 
@@ -29,14 +30,15 @@ int	is_found(void)
 
 	while (i < LEN)
 	{
-		if (((Cflag[i] & (Cflag[i] - UNIT)) || (Cflag[i + 1]))
-		&& ((Cflag[i + 1] & (Cflag[i + 1] - UNIT)) || (Cflag[i])))
+		if (((Cflag[i] & (Cflag[i] - UNIT)) || (Cflag[i + 1]) || (Cflag[i + 2]) || (Cflag[i + 3]))
+		&& ((Cflag[i + 1] & (Cflag[i + 1] - UNIT)) || (Cflag[i]) || (Cflag[i + 2]) || (Cflag[i + 3]))
+		&& ((Cflag[i + 2] & (Cflag[i + 2] - UNIT)) || (Cflag[i]) || (Cflag[i + 1]) || (Cflag[i + 3]))
+		&& ((Cflag[i + 3] & (Cflag[i + 3] - UNIT)) || (Cflag[i]) || (Cflag[i + 1]) || (Cflag[i + 2])))
 			return 0;
-		i += 2;
+		i += 4;
 	}
 	return 1;
 }
-
 
 int decode_hex(char c)
 {
@@ -59,7 +61,6 @@ char	*get_next_output(int sckt)
 		free(output);
 		get_next_line(sckt, &output);
 	}
-
 	return output;
 }
 
@@ -70,14 +71,26 @@ void	erase_hex(int j, char *s)
 	int			i;
 
 	i = decode_hex(s[0]) << 4 | decode_hex(s[1]);
-	if (i < 128)
+	if (i < 64)
 	{
+		hex ^= unit << i;
+		Cflag[j + 3] &= hex;
+	}
+	else if (i < 128)
+	{
+		i -= 64;
+		hex ^= unit << i;
+		Cflag[j + 2] &= hex;
+	}
+	else if (i < 192)
+	{
+		i -= 128;
 		hex ^= unit << i;
 		Cflag[j + 1] &= hex;
 	}
 	else
 	{
-		i -= 128;
+		i -= 192;
 		hex ^= unit << i;
 		Cflag[j] &= hex;
 	}
@@ -96,8 +109,8 @@ void	round_eliminate(int sckt)
 	printf("%s\n", otp_Cflag);
 	while (i < LEN)
 	{
-		erase_hex(i, otp_Cflag + i);
-		i += 2;
+		erase_hex(i, otp_Cflag + (i >> 1));
+		i += 4;
 	}
 	free(otp);
 }
@@ -109,27 +122,45 @@ void	output_Cflag()
 
 	while (i < LEN)
 	{
-		printf("%lli\n", Cflag[i]);
+//		printf("%lli\n", Cflag[i]);
 		if (Cflag[i])
 		{
-			j = 125;
+			j = 191;
 			while (Cflag[i] > 1)
 			{
 				Cflag[i] >>= 1;
 				j++;
 			}
 		}
-		else
+		else if (Cflag[i + 1])
 		{
-			j = -1;
+			j = 127;
 			while (Cflag[i + 1] > 1)
 			{
 				Cflag[i + 1] >>= 1;
 				j++;
 			}
 		}
-		printf("j = %i %x ", j, j);
-		i += 2;
+		else if (Cflag[i + 2])
+		{
+			j = 63;
+			while (Cflag[i + 2] > 1)
+			{
+				Cflag[i + 2] >>= 1;
+				j++;
+			}
+		}
+		else
+		{
+			j = -1;
+			while (Cflag[i + 3] > 1)
+			{
+				Cflag[i + 3] >>= 1;
+				j++;
+			}
+		}
+		printf("j = %i %x\n", j, j);
+		i += 4;
 	}
 }
 
@@ -138,7 +169,7 @@ int main()
 	struct addrinfo 	*addr;
 	int			sckt;
 
-	printf("debug\n");
+	printf("debug sizeof : %i\n", sizeof(Cflag[0]));
 	getaddrinfo("167.71.143.20", "32575", NULL, &addr);
 	sckt = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 	printf("connect state: %i, socket:%i\n", connect(sckt, addr->ai_addr, addr->ai_addrlen), sckt);
