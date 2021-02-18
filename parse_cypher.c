@@ -55,7 +55,7 @@ char	*get_next_output(int sckt)
 	char	*output;
 
 	send(sckt, "2\n", 2, 0);
-	send(sckt, "19702cc4ec8398d1824d5ffa847a83\n", 31, 0); //flag I found using parse_flag.c
+	send(sckt, "13702cc4ec8398d1824d5ffa847a83\n", 31, 0); //flag I found using parse_flag.c
 	get_next_line(sckt, &output);
 	while (output[1] == ')')
 	{
