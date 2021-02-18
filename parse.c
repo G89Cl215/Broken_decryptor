@@ -9,7 +9,7 @@
 #include "Ma_Libft/includes/libft.h"
 
 #define LEN 	60
-#define MAX 	0xfffffffffffffff
+#define MAX 	0xffffffffffffffff
 #define UNIT 	(unsigned long long)1
 
 unsigned long long 	Cflag[LEN];
@@ -120,12 +120,13 @@ void	output_Cflag()
 	int	i = 0;
 	int	j;
 
+		printf("Cyphered flag: ");
 	while (i < LEN)
 	{
 //		printf("%lli\n", Cflag[i]);
 		if (Cflag[i])
 		{
-			j = 191;
+			j = 192;
 			while (Cflag[i] > 1)
 			{
 				Cflag[i] >>= 1;
@@ -134,7 +135,7 @@ void	output_Cflag()
 		}
 		else if (Cflag[i + 1])
 		{
-			j = 127;
+			j = 128;
 			while (Cflag[i + 1] > 1)
 			{
 				Cflag[i + 1] >>= 1;
@@ -143,7 +144,7 @@ void	output_Cflag()
 		}
 		else if (Cflag[i + 2])
 		{
-			j = 63;
+			j = 64;
 			while (Cflag[i + 2] > 1)
 			{
 				Cflag[i + 2] >>= 1;
@@ -152,16 +153,17 @@ void	output_Cflag()
 		}
 		else
 		{
-			j = -1;
+			j = 0;
 			while (Cflag[i + 3] > 1)
 			{
 				Cflag[i + 3] >>= 1;
 				j++;
 			}
 		}
-		printf("j = %i %x\n", j, j);
+		printf("%x ", j);
 		i += 4;
 	}
+		printf("\n");
 }
 
 int main()
@@ -170,7 +172,7 @@ int main()
 	int			sckt;
 
 	printf("debug sizeof : %i\n", sizeof(Cflag[0]));
-	getaddrinfo("167.71.143.20", "32575", NULL, &addr);
+	getaddrinfo("167.71.143.20", "31003", NULL, &addr);
 	sckt = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 	printf("connect state: %i, socket:%i\n", connect(sckt, addr->ai_addr, addr->ai_addrlen), sckt);
 	init_flag();

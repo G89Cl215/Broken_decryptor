@@ -6,23 +6,21 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#include "Ma_Libft/includes/libft.h"
+#include "Ma_Libft/includes/libft.h" //Needs a custom lib in the repo. lib can be found on my github. most be added to compilation (+ needs to be compiled as well)
 
 #define LEN 	60
-#define MAX 	0xfffffffffffffff
+#define MAX 	0xffffffffffffffff
 #define UNIT 	(unsigned long long)1
 
-unsigned long long 	Cflag[LEN];
+unsigned long long 	Cflag[LEN]; //representas all the possible values for each of the bytes of the flag. 4 long long ints encode the 256 value the byte can take, each bit representing a value. the values are sorted in big endian (i.e. zero is at the right most bit of the 4 lli)
 
 void	init_flag(void)
 {
 	int	i = 0;
 
 	while (i < LEN)
-		Cflag[i++] = MAX;
+		Cflag[i++] = MAX; //each value is possible because none was eliminated
 }
-
-
 
 int	is_found(void)
 {
@@ -34,7 +32,7 @@ int	is_found(void)
 		&& ((Cflag[i + 1] & (Cflag[i + 1] - UNIT)) || (Cflag[i]) || (Cflag[i + 2]) || (Cflag[i + 3]))
 		&& ((Cflag[i + 2] & (Cflag[i + 2] - UNIT)) || (Cflag[i]) || (Cflag[i + 1]) || (Cflag[i + 3]))
 		&& ((Cflag[i + 3] & (Cflag[i + 3] - UNIT)) || (Cflag[i]) || (Cflag[i + 1]) || (Cflag[i + 2])))
-			return 0;
+			return 0; // the absurd condition only fails if two or more bits are 1 in the 4 long long int encoding the byte (i.e. 2 values of the byte are at least possible)
 		i += 4;
 	}
 	return 1;
@@ -54,8 +52,8 @@ char	*get_next_output(int sckt)
 {
 	char	*output;
 
-	send(sckt, "2\n", 2, 0);
-	send(sckt, "13702cc4ec8398d1824d5ffa847a83\n", 31, 0); //flag I found using parse_flag.c
+	send(sckt, "2\n", 2, 0); //you want to  encrypt the flag to decypher it (CTR_MODE has the same cyphering / decyphering mechanism: XOR of the same cypher stream
+	send(sckt, "fbe22c3af35ff5f3077a0d9e3b9efb\n", 31, 0);	//flag you can find using parse_flag.c (each instance of the problem wil give you different values
 	get_next_line(sckt, &output);
 	while (output[1] == ')')
 	{
@@ -121,12 +119,13 @@ void	output_Cflag()
 	int	i = 0;
 	int	j;
 
+	printf("Flag: ");
 	while (i < LEN)
 	{
 //		printf("%lli\n", Cflag[i]);
 		if (Cflag[i])
 		{
-			j = 191;
+			j = 192;
 			while (Cflag[i] > 1)
 			{
 				Cflag[i] >>= 1;
@@ -135,7 +134,7 @@ void	output_Cflag()
 		}
 		else if (Cflag[i + 1])
 		{
-			j = 127;
+			j = 128;
 			while (Cflag[i + 1] > 1)
 			{
 				Cflag[i + 1] >>= 1;
@@ -144,7 +143,7 @@ void	output_Cflag()
 		}
 		else if (Cflag[i + 2])
 		{
-			j = 63;
+			j = 64;
 			while (Cflag[i + 2] > 1)
 			{
 				Cflag[i + 2] >>= 1;
@@ -153,16 +152,17 @@ void	output_Cflag()
 		}
 		else
 		{
-			j = -1;
+			j = 0;
 			while (Cflag[i + 3] > 1)
 			{
 				Cflag[i + 3] >>= 1;
 				j++;
 			}
 		}
-		printf("j = %i %x\n", j, j);
+		printf("%x ",j);
 		i += 4;
 	}
+	printf("\n");
 }
 
 int main()
@@ -170,8 +170,8 @@ int main()
 	struct addrinfo 	*addr;
 	int			sckt;
 
-	printf("debug sizeof : %i\n", sizeof(Cflag[0]));
-	getaddrinfo("167.71.143.20", "32575", NULL, &addr);
+	printf("debug\n");
+	getaddrinfo("167.71.143.20", "31003", NULL, &addr); // the params of the instance of the challenge given by htb
 	sckt = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 	printf("connect state: %i, socket:%i\n", connect(sckt, addr->ai_addr, addr->ai_addrlen), sckt);
 	init_flag();
