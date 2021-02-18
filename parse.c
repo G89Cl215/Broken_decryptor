@@ -7,7 +7,9 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include "Ma_Libft/includes/libft.h"
-#define LEN 	15
+#define LEN 	30
+#define MAX 	0xfffffffffffffff
+#define UNIT 	(unsigned long long)1
 
 unsigned long long 	Cflag[LEN];
 
@@ -16,7 +18,7 @@ void	init_flag(void)
 	int	i = 0;
 
 	while (i < LEN)
-		Cflag[i++] = 0xffffffff;
+		Cflag[i++] = MAX;
 }
 
 
@@ -27,9 +29,10 @@ int	is_found(void)
 
 	while (i < LEN)
 	{
-		if (Cflag[i] & Cflag[i] - 1)
+		if (((Cflag[i] & (Cflag[i] - UNIT)) || (Cflag[i + 1]))
+		&& ((Cflag[i + 1] & (Cflag[i + 1] - UNIT)) || (Cflag[i])))
 			return 0;
-		i++;
+		i += 2;
 	}
 	return 1;
 }
@@ -62,13 +65,23 @@ char	*get_next_output(int sckt)
 
 void	erase_hex(int j, char *s)
 {
-	unsigned long long	hex = 0xffffffff;
-	unsigned long long	unit = 1;
+	unsigned long long	hex = MAX;
+	unsigned long long	unit = UNIT;
 	int			i;
 
 	i = decode_hex(s[0]) << 4 | decode_hex(s[1]);
-	hex ^= unit << i;
-	Cflag[j] &= hex;
+	if (i < 128)
+	{
+		hex ^= unit << i;
+		Cflag[j + 1] &= hex;
+	}
+	else
+	{
+		i -= 128;
+		hex ^= unit << i;
+		Cflag[j] &= hex;
+	}
+//	printf("round byte: %c%c = %i code %lli\n", s[0], s[1], i, hex);
 }
 
 void	round_eliminate(int sckt)
@@ -83,8 +96,8 @@ void	round_eliminate(int sckt)
 	printf("%s\n", otp_Cflag);
 	while (i < LEN)
 	{
-		erase_hex(i, otp_Cflag + (i << 1));
-		i++;
+		erase_hex(i, otp_Cflag + i);
+		i += 2;
 	}
 	free(otp);
 }
@@ -96,14 +109,27 @@ void	output_Cflag()
 
 	while (i < LEN)
 	{
-		j = -1;
-		while (Cflag[i])
+		printf("%lli\n", Cflag[i]);
+		if (Cflag[i])
 		{
-			Cflag[i] >>= 1;
-			j++;
+			j = 125;
+			while (Cflag[i] > 1)
+			{
+				Cflag[i] >>= 1;
+				j++;
+			}
 		}
-		printf("%x", j);
-		i++;
+		else
+		{
+			j = -1;
+			while (Cflag[i + 1] > 1)
+			{
+				Cflag[i + 1] >>= 1;
+				j++;
+			}
+		}
+		printf("j = %i %x ", j, j);
+		i += 2;
 	}
 }
 
@@ -113,7 +139,7 @@ int main()
 	int			sckt;
 
 	printf("debug\n");
-	getaddrinfo("206.189.18.188", "31832", NULL, &addr);
+	getaddrinfo("167.71.143.20", "32575", NULL, &addr);
 	sckt = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 	printf("connect state: %i, socket:%i\n", connect(sckt, addr->ai_addr, addr->ai_addrlen), sckt);
 	init_flag();
